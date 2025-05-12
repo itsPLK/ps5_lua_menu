@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>PLK's Lua Menu</title>
+    <style>
+        body {
+            background-color: #0055AA;
+            color: white;
+            font-family: sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+        .header {
+            background-color: #003366;
+            padding: 20px;
+            text-align: center;
+        }
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 200px;
+            overflow-y: auto;
+        }
+        .button {
+            background-color: #1f83ff;
+            border: none;
+            color: white;
+            padding: 18px 32px;
+            text-align: center;
+            text-decoration: none;
+            display: inline-block;
+            font-size: 20px;
+            font-weight: bold;
+            margin: 10px;
+            cursor: pointer;
+            border-radius: 5px;
+            position: relative;
+            min-width: 180px;
+        }
+        .button:disabled {
+            background-color: #496485;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .button-text {
+            transition: opacity 0.3s;
+        }
+        .log-container {
+            background-color: #001133;
+            color: #fff;
+            text-align: left;
+            padding: 10px;
+            height: 200px;
+            overflow: hidden;
+            font-family: monospace;
+            font-size: 14px;
+            border: 0;
+            border-top: 2px solid #0077CC;
+            width: 100%;
+            box-sizing: border-box;
+            transition: all 0.5s ease;
+            position: relative;
+            cursor: pointer;
+            bottom: 0;
+        }
+        .log-entry {
+            margin: 2px 0;
+            word-wrap: break-word;
+        }
+        .log-header {
+            display: flex;
+            justify-content: space-between;
+            background-color: #002244;
+            padding: 5px 10px;
+            border-top: 1px solid #0077CC;
+            bottom: 0;
+        }
+        .log-title {
+            font-weight: bold;
+        }
+        .log-controls {
+            display: flex;
+            gap: 10px;
+        }
+        .log-control {
+            cursor: pointer;
+            color: #AACCFF;
+            user-select: none;
+            background-color: #002244;
+            border: 0;
+        }
+        .log-control:hover {
+            color: white;
+        }
+        #log-content {
+            transition: all 0.5s ease;
+        }
+
+        .log-hidden .log-container {
+            display: none;
+        }
+
+        .fullscreen-mode #log-toggle {
+            display: none;
+        }
+
+        .log-hidden #fullscreen-toggle {
+            display: none;
+        }
+        
+        /* Fullscreen mode styles */
+        .fullscreen-mode .header,
+        .fullscreen-mode .content {
+            display: none;
+        }
+        
+        .fullscreen-mode .log-container {
+            height: 100%;
+            position: fixed;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 100;
+            overflow-y: auto;
+        }
+        
+        .fullscreen-mode .log-header {
+            display: none;
+        }
+
+        .payloads-section {
+            width: 100%;
+            max-width: 1200px;
+            margin-top: 20px;
+        }
+        
+        .section-title {
+            color: #b5b5b5;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+            margin-top: 10px;
+            text-align: center;
+        }
+
+        .payload-path-tag {
+            position: absolute;
+            top: 0;
+            left: 0;
+            background-color: #096ee9;
+            color: #c7c7c7;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-size: 0.8em;
+            z-index: 1;
+        }
+
+        .payload-path-data {
+        }
+
+        .payload-path-usb {
+        }
+
+    </style>
+</head>
+<body>
+    <div class="content">
+
+        <div class="payloads-section">
+
+            <button class="button" onclick="executeCommand('read_klog', this)">
+                <span class="button-text">read_klog</span>
+            </button>
+            <button class="button" onclick="executeCommand('elf_loader', this)">
+                <span class="button-text">ELF Loader</span>
+            </button>
+
+            <div id="payloads-container">
+                <div style="text-align: center; padding: 20px;">Loading payloads...</div>
+            </div>
+        </div>
+    </div>
+    <div class="log-header">
+        <div class="log-title">Logs</div>
+    </div>
+    <button class="log-container" id="log-container" onclick="toggleFullscreen()">
+        <pre id="log-content"></pre>
+    </button>
+
+    <script>
+        const logContainer = document.getElementById('log-container');
+        const logContent = document.getElementById('log-content');
+        let isFullscreen = false;
+        let isLogHidden = false;
+        let autoScrollEnabled = true;
+        let lastLogCount = 0;
+        
+        // Fetch payloads and create buttons
+        function fetchPayloads() {
+            fetch('/list_payloads')
+                .then(response => response.json())
+                .then(data => {
+                    const payloadsContainer = document.getElementById('payloads-container');
+                    payloadsContainer.innerHTML = ''; // Clear loading message
+                    
+                    if (data.payloads && data.payloads.length > 0) {
+                        data.payloads.forEach(path => {
+                            // Create a button for each payload
+                            const button = document.createElement('button');
+                            button.className = 'button';
+
+                            // Extract filename from path for shorter display
+                            const fileName = path.split('/').pop();
+                            
+                            // Create span for button text
+                            const span = document.createElement('span');
+                            span.className = 'button-text';
+                            span.textContent = fileName;
+                            
+                            button.appendChild(span);
+                            
+                            // Create tag
+                            const tag = document.createElement('span');
+                            tag.className = 'payload-path-tag';
+                            let tagText = '';
+                            let tagClass = '';
+                            
+                            if (path.startsWith('/data/')) {
+                                tagText = '/data';
+                                tagClass = 'payload-path-data';
+                            } else if (path.startsWith('/mnt/usb')) {
+                                const usbNumber = path.substring(8,9); // Extract number after /mnt/usb
+                                tagText = 'usb' + usbNumber;
+                                tagClass = 'payload-path-usb';
+                            }
+                            if (tagText) {
+                                tag.textContent = tagText;
+                                tag.classList.add(tagClass);
+                                button.appendChild(tag);
+                            }
+                            // Add click handler to load the payload
+                            button.onclick = function() {
+                                loadPayload(path, this);
+                            };
+                            
+                            payloadsContainer.appendChild(button);
+                        });
+                    } else {
+                        payloadsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">No payloads found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching payloads:', error);
+                    const payloadsContainer = document.getElementById('payloads-container');
+                    payloadsContainer.innerHTML = '<div style="text-align: center; padding: 20px; color: #FF5555;">Error loading payloads</div>';
+                });
+        }
+        
+        // Function to load a payload
+        function loadPayload(path, buttonElement) {
+            // Disable the button
+            buttonElement.disabled = true;
+            
+            const fileName = path.split('/').pop();
+
+            // Send the command to load the payload
+            fetch('/loadpayload:' + encodeURIComponent(path))
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Payload load response:', data);
+                })
+                .catch(error => {
+                    console.error('Payload load error:', error);
+                })
+                .finally(() => {
+                    setTimeout(function() {
+                        buttonElement.disabled = false;
+                    }, 1500)
+                });
+        }
+
+        function toggleLog() {
+            isLogHidden = !isLogHidden;
+            document.body.classList.toggle('log-hidden', isLogHidden);
+        }
+
+        function toggleFullscreen() {
+            isFullscreen = !isFullscreen;
+            document.body.classList.toggle('fullscreen-mode', isFullscreen);
+            if (!isFullscreen) {
+                scrollToBottom();
+            }
+        }
+        function fetchLogs() {
+            fetch('/log')
+                .then(response => response.json())
+                .then(data => {
+                    // Only update if auto-scroll is enabled or we have new logs
+                    if (autoScrollEnabled || data.logs.length !== lastLogCount) {
+                        updateLogDisplay(data.logs);
+                        lastLogCount = data.logs.length;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching logs:', error);
+                })
+                .finally(() => {
+                    setTimeout(fetchLogs, 500);
+                });
+        }
+        
+        function updateLogDisplay(logs) {
+            // Update the log content
+            logContent.innerHTML = '';
+            logs.forEach(log => {
+                const logEntry = document.createElement('div');
+                logEntry.className = 'log-entry';
+                logEntry.textContent = log;
+                logContent.appendChild(logEntry);
+            });
+            
+            // Only scroll to bottom if auto-scroll is enabled
+            if (autoScrollEnabled) {
+                scrollToBottom();
+            }
+        }
+        
+        function scrollToBottom() {
+            logContainer.scrollTop = logContainer.scrollHeight;
+            autoScrollEnabled = true;
+        }
+        
+        function executeCommand(cmd, buttonElement) {
+            // Disable the button
+            buttonElement.disabled = true;
+
+            if (cmd == "read_klog") {
+                // fullscreen log if not already fullscreen
+                if (!isFullscreen) {
+                    toggleFullscreen();
+                }
+            }
+            
+            // Send the command
+            fetch('/command?action=' + cmd)
+                .then(response => response.text())
+                .then(data => {
+                    console.log('Command response:', data);
+                })
+                .catch(error => {
+                    console.error('Command error:', error);
+                })
+                .finally(() => {
+                    // Re-enable after 1.5 seconds
+                    setTimeout(() => {
+                        buttonElement.disabled = false;
+                    }, 1500);
+                });
+        }
+        
+        function isScrolledToBottom() {
+            return logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 5;
+        }
+        
+        // Check scroll position
+        logContainer.addEventListener('scroll', function() {
+            if (!isScrolledToBottom()) {
+                autoScrollEnabled = false;
+            } else {
+                autoScrollEnabled = true;
+            }
+        });
+        
+        // Start fetching logs
+        fetchLogs();
+        
+        // Fetch payloads when page loads
+        fetchPayloads();
+
+        // Send keepalive every 2 seconds
+        function setupKeepAlive() {
+            if (navigator.userAgent.includes("PlayStation")) {
+                setInterval(function() {
+                    fetch('/keepalive')
+                        .catch(error => console.error("Keepalive failed:", error));
+                }, 2000);
+            }
+        }
+        
+        // Run when page loads
+        window.addEventListener('load', setupKeepAlive);
+    </script>
+</body>
+</html>
