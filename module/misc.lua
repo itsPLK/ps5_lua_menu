@@ -145,3 +145,61 @@ function read_klog()
     syscall.close(klog_fd)
     return log_content
 end
+
+
+function htons(port)
+    return bit32.bor(bit32.lshift(port, 8), bit32.rshift(port, 8)) % 0x10000
+end
+
+syscall.resolve({
+    getsockname = 32,
+})
+
+function get_local_ip_address()
+    -- Create a UDP socket
+    local sock = syscall.socket(2, 2, 0):tonumber() -- AF_INET=2, SOCK_DGRAM=2
+    print("Socket fd:", sock)
+    assert(sock >= 0, "socket creation failed")
+    
+    -- Prepare address structure for Google's DNS (8.8.8.8:53)
+    local addr = memory.alloc(16)
+    memory.write_byte(addr + 0, 16)       -- sa_len
+    memory.write_byte(addr + 1, 2)        -- AF_INET
+    memory.write_word(addr + 2, htons(53)) -- Port 53 (DNS)
+    
+    -- 8.8.8.8 (Google DNS)
+    memory.write_byte(addr + 4, 8)
+    memory.write_byte(addr + 5, 8)
+    memory.write_byte(addr + 6, 8)
+    memory.write_byte(addr + 7, 8)
+    
+    -- Connect (this doesn't actually establish a connection for UDP)
+    local result = syscall.connect(sock, addr, 16):tonumber()
+    if result < 0 then
+        syscall.close(sock)
+        print("Connect failed")
+        return nil
+    end
+
+    local local_addr = memory.alloc(16)
+    local addr_len = memory.alloc(4)
+    memory.write_dword(addr_len, 16)
+    
+    result = syscall.getsockname(sock, local_addr, addr_len):tonumber()
+    if result < 0 then
+        syscall.close(sock)
+        print("Getsockname failed")
+        return nil
+    end
+    
+    local ip1 = memory.read_byte(local_addr + 4):tonumber()
+    local ip2 = memory.read_byte(local_addr + 5):tonumber()
+    local ip3 = memory.read_byte(local_addr + 6):tonumber()
+    local ip4 = memory.read_byte(local_addr + 7):tonumber()
+    
+    syscall.close(sock)
+    
+    local ip_address = string.format("%d.%d.%d.%d", ip1, ip2, ip3, ip4)
+    print("Local IP address:", ip_address)
+    return ip_address
+end

@@ -47,6 +47,11 @@ end
 
 function elf_sender:send_to_localhost(port)
 
+    if not elf_sender:check_if_elfloader_is_running(9021) then
+        elf_loader:main()
+        sleep(4000, "ms")
+    end
+
     local sockfd = elf_sender:sceNetSocket(2, 1, 0) -- AF_INET=2, SOCK_STREAM=1
     print("Socket fd:", sockfd)
     assert(sockfd >= 0, "socket creation failed")
@@ -86,4 +91,37 @@ function elf_sender:send_to_localhost(port)
         return
     end
     print(string.format("Successfully sent %d bytes to loader", total_sent))
+end
+
+
+function elf_sender:check_if_elfloader_is_running(port)
+    local sockfd = elf_sender:sceNetSocket(2, 1, 0) -- AF_INET=2, SOCK_STREAM=1
+    print("Socket fd:", sockfd)
+    assert(sockfd >= 0, "socket creation failed")
+    local enable = memory.alloc(4)
+    memory.write_dword(enable, 1)
+    syscall.setsockopt(sockfd, 1, 2, enable, 4) -- SOL_SOCKET=1, SO_REUSEADDR=2
+
+    local sockaddr = memory.alloc(16)
+
+    memory.write_byte(sockaddr + 0, 16)
+    memory.write_byte(sockaddr + 1, 2) -- AF_INET
+    memory.write_word(sockaddr + 2, elf_sender:htons(port))
+
+    memory.write_byte(sockaddr + 4, 0x7F) -- 127
+    memory.write_byte(sockaddr + 5, 0x00) -- 0
+    memory.write_byte(sockaddr + 6, 0x00) -- 0
+    memory.write_byte(sockaddr + 7, 0x01) -- 1
+
+    local connect_result = syscall.connect(sockfd, sockaddr, 16):tonumber()
+    elf_sender:sceNetSocketClose(sockfd)
+
+    if connect_result < 0 then
+        print("ELF Loader not running, starting it")
+        send_ps_notification("ELF Loader not running, starting it")
+        return false
+    else
+        print("ELF Loader is already running")
+        return true
+    end
 end

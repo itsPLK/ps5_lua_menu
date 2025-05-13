@@ -10,9 +10,13 @@ require("module/misc")
 require("module/elf_loader")
 require("module/elf_sender")
 
+require("module/manage")
 require("module/list_payloads")
 require("module/load_payload")
 
 HTML_CONTENT = [[html_include:html/index.html]]
+
+HTML_MANAGE_CONTENT = [[html_include:html/manage.html]]
+
 
 require("module/httpserver")

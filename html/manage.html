@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PLK's Lua Menu (Payload Manager)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+        body {
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 0;
+        }
+        h2 {
+            text-align: center;
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        }
+
+        .file-list {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+        }
+        .file-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #f9f9f9;
+            margin-bottom: 8px;
+            border-radius: 4px;
+            border-left: 4px solid #3498db;
+        }
+        .file-name {
+            word-break: break-all;
+            padding-right: 10px;
+        }
+        .delete-btn {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+        .upload-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .upload-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        .upload-btn:hover {
+            background-color: #27ae60;
+        }
+        .file-input {
+            display: none;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            width: 400px;
+            text-align: center;
+        }
+        .modal-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .modal-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .confirm-btn {
+            background-color: #e74c3c;
+            color: white;
+        }
+        .cancel-btn {
+            background-color: #95a5a6;
+            color: white;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .no-files {
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+        .refresh-btn {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-bottom: 15px;
+        }
+        .refresh-btn:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>PLK's Lua Menu</h1>
+        <h2>Payload Manager</h2>
+        
+        <button id="refreshBtn" class="refresh-btn">Refresh File List</button>
+        
+        <ul id="fileList" class="file-list">
+            <li class="no-files">Loading files...</li>
+        </ul>
+        
+        <div class="upload-section">
+            <input type="file" id="fileInput" class="file-input">
+            <button id="uploadBtn" class="upload-btn">Upload File</button>
+        </div>
+    </div>
+    
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <h3>Confirm Deletion</h3>
+            <p>Are you sure you want to delete <span id="fileToDelete"></span>?</p>
+            <div class="modal-buttons">
+                <button id="cancelDelete" class="modal-btn cancel-btn">Cancel</button>
+                <button id="confirmDelete" class="modal-btn confirm-btn">Delete</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Status Modal -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <h3 id="uploadStatus">Uploading File</h3>
+            <div id="uploadSpinner" class="loading-spinner"></div>
+            <p id="uploadMessage">Please wait while your file is being uploaded...</p>
+            <div class="modal-buttons">
+                <button id="closeUpload" class="modal-btn cancel-btn" style="display: none;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileList = document.getElementById('fileList');
+            const refreshBtn = document.getElementById('refreshBtn');
+            const uploadBtn = document.getElementById('uploadBtn');
+            const fileInput = document.getElementById('fileInput');
+            const deleteModal = document.getElementById('deleteModal');
+            const uploadModal = document.getElementById('uploadModal');
+            const fileToDelete = document.getElementById('fileToDelete');
+            const confirmDelete = document.getElementById('confirmDelete');
+            const cancelDelete = document.getElementById('cancelDelete');
+            const closeUpload = document.getElementById('closeUpload');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const uploadMessage = document.getElementById('uploadMessage');
+            const uploadSpinner = document.getElementById('uploadSpinner');
+            
+            let currentFilePath = '';
+            
+            // Load files on page load
+            loadFiles();
+            
+            // Refresh file list
+            refreshBtn.addEventListener('click', loadFiles);
+            
+            // Handle file upload button click
+            uploadBtn.addEventListener('click', function() {
+                fileInput.click();
+            });
+            
+            // Handle file selection
+            fileInput.addEventListener('change', function(e) {
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    uploadFile(file);
+                }
+            });
+            
+            // Cancel delete
+            cancelDelete.addEventListener('click', function() {
+                deleteModal.style.display = 'none';
+                currentFilePath = '';
+            });
+            
+            // Confirm delete
+            confirmDelete.addEventListener('click', function() {
+                if (currentFilePath) {
+                    deleteFile(currentFilePath);
+                }
+            });
+            
+            // Close upload modal
+            closeUpload.addEventListener('click', function() {
+                uploadModal.style.display = 'none';
+                uploadSpinner.style.display = 'block';
+                closeUpload.style.display = 'none';
+            });
+            
+            // Function to load files
+            function loadFiles() {
+                fetch('/list_payloads:only_data')
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        displayFiles(data.payloads);
+                    })
+                    .catch(error => {
+                        fileList.innerHTML = `<li class="no-files">Error loading files: ${error.message}</li>`;
+                    });
+            }
+            
+            // Function to display files
+            function displayFiles(files) {
+                if (!files || files.length === 0) {
+                    fileList.innerHTML = '<li class="no-files">No files found</li>';
+                    return;
+                }
+                
+                fileList.innerHTML = '';
+                
+                files.forEach(filePath => {
+                    const fileName = filePath.split('/').pop();
+                    
+                    const li = document.createElement('li');
+                    li.className = 'file-item';
+                    
+                    const fileNameSpan = document.createElement('span');
+                    fileNameSpan.className = 'file-name';
+                    fileNameSpan.textContent = fileName;
+                    
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = 'Delete';
+                    deleteBtn.addEventListener('click', function() {
+                        showDeleteConfirmation(filePath, fileName);
+                    });
+                    
+                    li.appendChild(fileNameSpan);
+                    li.appendChild(deleteBtn);
+                    fileList.appendChild(li);
+                });
+            }
+            
+            // Function to show delete confirmation
+            function showDeleteConfirmation(filePath, fileName) {
+                currentFilePath = filePath;
+                fileToDelete.textContent = fileName;
+                deleteModal.style.display = 'flex';
+            }
+            
+            // Function to delete file
+            function deleteFile(filePath) {
+                const fileName = filePath.split('/').pop();
+                deleteModal.style.display = 'none';
+                
+                fetch(`/manage:delete?filename=${encodeURIComponent(fileName)}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Failed to delete file');
+                        }
+                        loadFiles();
+                    })
+                    .catch(error => {
+                        alert(`Error deleting file: ${error.message}`);
+                    })
+                    .finally(() => {
+                        currentFilePath = '';
+                    });
+            }
+            
+            // Function to upload file
+            function uploadFile(file) {
+                // Show upload modal
+                uploadStatus.textContent = 'Uploading File';
+                uploadMessage.textContent = `Uploading ${file.name}...`;
+                uploadSpinner.style.display = 'block';
+                closeUpload.style.display = 'none';
+                uploadModal.style.display = 'flex';
+                
+                const formData = new FormData();
+                formData.append('file', file);
+                
+                fetch(`/manage:upload?filename=${encodeURIComponent(file.name)}`, {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Upload failed');
+                    }
+                    uploadStatus.textContent = 'Upload Successful';
+                    uploadMessage.textContent = `${file.name} has been uploaded successfully.`;
+                    loadFiles();
+                })
+                .catch(error => {
+                    uploadStatus.textContent = 'Upload Failed';
+                    uploadMessage.textContent = `Error uploading file: ${error.message}`;
+                })
+                .finally(() => {
+                    uploadSpinner.style.display = 'none';
+                    closeUpload.style.display = 'inline-block';
+                    fileInput.value = '';
+                });
+            }
+        });
+    </script>
+</body>
+</html>

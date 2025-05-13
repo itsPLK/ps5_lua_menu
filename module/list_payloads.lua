@@ -1,7 +1,8 @@
 
 syscall.resolve({
-    stat = 188,
+    stat = 188, -- sys_stat2
     getdents = 272,
+    fsync = 95,
 })
 function sceStat(path, st)
     return syscall.stat(path, st):tonumber()
@@ -13,13 +14,21 @@ function read_u8(addr)
     local f = memory.read_buffer(addr, 1)
     return f:byte(1)
 end
+function read_u16(addr)
+    local f = memory.read_buffer(addr, 2)
+    local lo = f:byte(2)
+    local hi = f:byte(1)
+    return bit32.bor(hi, bit32.lshift(lo, 8))
+end
 
 
-function list_payloads()
+function list_payloads(only_data)
 
     print("Scanning for payloads in:")
     print("/data/ps5_lua_loader/")
-    print("/mnt/usb*/ps5_lua_loader/")
+    if not only_data then
+        print("/mnt/usb*/ps5_lua_loader/")
+    end
 
     -- Initialize empty array for results
     local matching_files = {}
@@ -28,14 +37,16 @@ function list_payloads()
     local directories = {"/data/ps5_lua_loader/"}
     
     -- Add USB directories
-    for i = 0, 7 do
-        table.insert(directories, "/mnt/usb" .. i .. "/ps5_lua_loader/")
+    if not only_data then
+        for i = 0, 7 do
+            table.insert(directories, "/mnt/usb" .. i .. "/ps5_lua_loader/")
+        end
     end
-    
+
     -- Allocate memory for file operations
     local st = memory.alloc(128)  -- stat structure
     local contents = memory.alloc(4096)  -- buffer for directory entries
-    
+
     -- Scan each directory
     for _, dir_path in ipairs(directories) do
         -- print("Scanning directory: " .. dir_path)
@@ -44,6 +55,8 @@ function list_payloads()
         if fd < 0 then
             -- print("Failed to open directory: " .. dir_path)
         else
+            syscall.fsync(fd)
+
             while true do
                 local nread = sceGetdents(fd, contents, 4096)
                 if nread <= 0 then break end
@@ -52,7 +65,7 @@ function list_payloads()
                 local end_ptr = contents + nread
                 
                 while entry < end_ptr do
-                    local length = read_u8(entry + 0x4)
+                    local length = read_u16(entry + 0x4)
                     if length == 0 then break end
                     
                     local name = memory.read_buffer(entry + 0x8, 64)
@@ -68,7 +81,9 @@ function list_payloads()
                         if stat_result >= 0 then
                             -- Add file if it matches our extensions
                             if name:match("%.lua$") or name:match("%.elf$") or name:match("%.bin$") then
-                                table.insert(matching_files, full_path)
+                                if name ~= "ps5_lua_menu.lua" and name ~= "elfldr.elf" then
+                                    table.insert(matching_files, full_path)
+                                end
                             end
                         end
                     end
@@ -76,7 +91,6 @@ function list_payloads()
                     entry = entry + length
                 end
             end
-            
             syscall.close(fd)
         end
     end

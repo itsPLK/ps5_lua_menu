@@ -1,16 +1,5 @@
 
 
-function menu_action(action)
-    if action == "read_klog" then
-        print(read_klog())
-    elseif action == "elf_loader" then
-        elf_loader:main()
-    else
-        print("Unknown action:", action)
-    end
-end
-
-
 local libSystemService = find_mod_by_name("libSceSystemService.sprx")
 sceSystemServiceLaunchWebBrowser = fcall(dlsym(libSystemService.handle, "sceSystemServiceLaunchWebBrowser"))
 
@@ -59,7 +48,7 @@ end
 function http_server.create_server(port)
     -- Create socket
     local sockfd = syscall.socket(AF_INET, SOCK_STREAM, 0):tonumber()
-    -- print("Server socket fd:", sockfd)
+    print("Server socket fd:", sockfd)
     assert(sockfd >= 0, "Server socket creation failed")
     
     -- Set socket options
@@ -136,16 +125,96 @@ end
 
 
 function http_server.read_request(client_fd)
-    local buffer = memory.alloc(4096)
-    local bytes_read = syscall.recv(client_fd, buffer, 4096, 0):tonumber()
+    -- First read the headers with a smaller buffer
+    local header_buffer = memory.alloc(4096)
+    local bytes_read = syscall.recv(client_fd, header_buffer, 4096, 0):tonumber()
     
     if bytes_read <= 0 then
         return nil
     end
     
-    local request = memory.read_buffer(buffer, bytes_read)
-    return request
+    local headers = memory.read_buffer(header_buffer, bytes_read)
+    
+    -- Check if this is a POST request with content
+    local method = headers:match("^(%S+)%s+")
+    local content_length = headers:match("Content%-Length:%s*(%d+)")
+    
+    if method == "POST" and content_length then
+        content_length = tonumber(content_length)
+        
+        -- If we have a large POST, process it in chunks
+        if content_length > 0 then
+            -- Check if we already received the full content
+            local header_end = headers:find("\r\n\r\n")
+            local body_start = header_end and header_end + 4 or nil
+            
+            if body_start and bytes_read - body_start + 1 >= content_length then
+                -- We already have the full request
+                return headers
+            else
+                -- Need to read more data in chunks
+                local CHUNK_SIZE = 1024 * 1024  -- 1MB chunks
+                
+                -- Calculate how much of the body we already have
+                local body_bytes_received = bytes_read - body_start + 1
+                local body_bytes_remaining = content_length - body_bytes_received
+                
+                -- Create a buffer for the full request
+                local full_request = headers
+                
+                -- Read the rest of the body in chunks
+                while body_bytes_remaining > 0 do
+                    local chunk_size = math.min(CHUNK_SIZE, body_bytes_remaining)
+                    local chunk_buffer = memory.alloc(chunk_size)
+                    
+                    local chunk_bytes_read = syscall.recv(client_fd, chunk_buffer, chunk_size, 0):tonumber()
+                    if chunk_bytes_read <= 0 then
+                        print("Error reading chunk: " .. chunk_bytes_read)
+                        break
+                    end
+                    
+                    -- Append this chunk to our full request
+                    full_request = full_request .. memory.read_buffer(chunk_buffer, chunk_bytes_read)
+                    
+                    -- Update our counters
+                    body_bytes_remaining = body_bytes_remaining - chunk_bytes_read
+                end
+                
+                return full_request
+            end
+        end
+    end
+    
+    return headers
 end
+
+
+
+function http_server.extract_post_data(request)
+    -- Find the boundary from the Content-Type header
+    local boundary = request:match("Content%-Type: multipart/form%-data; boundary=([^\r\n]+)")
+    if not boundary then return nil end
+    
+    -- Format the boundary as it appears in the content
+    local content_boundary = "--" .. boundary
+    
+    -- Find the start of the file content
+    local file_start_pattern = content_boundary .. "\r\n" ..
+                              "Content%-Disposition: form%-data; name=\"[^\"]+\"; filename=\"[^\"]+\"\r\n" ..
+                              "Content%-Type: [^\r\n]+\r\n\r\n"
+    
+    local content_start = request:match(file_start_pattern .. "()")
+    if not content_start then return nil end
+    
+    -- Find the end boundary
+    local content_end = request:find("\r\n" .. content_boundary .. "--", content_start)
+    if not content_end then return nil end
+    
+    -- Extract just the file content between the header and end boundary
+    local file_content = request:sub(content_start, content_end - 1)
+    return file_content
+end
+
 
 function http_server.send_response(client_fd, content)
     local response = string.format(HTTP_RESPONSE, #content, content)
@@ -176,8 +245,12 @@ function http_server.handle_request(request)
     if path == "/" or path == "/index.html" then
         return HTML_CONTENT
 
+    elseif path == "/manage" then
+        return HTML_MANAGE_CONTENT
+
     elseif path == "/shutdown" then
         http_server.should_shutdown = true
+        send_ps_notification("Shutting down HTTP server...")
         return "Server shutting down..."
 
     elseif path == "/keepalive" then
@@ -190,10 +263,11 @@ function http_server.handle_request(request)
     elseif path == "/list_payloads" then
         return convert_to_json(list_payloads(), "payloads")
 
+    elseif path == "/list_payloads:only_data" then
+        return convert_to_json(list_payloads(true), "payloads")
+
     elseif path:match("^/loadpayload:") then
-        -- Extract the payload path from the URL
         local payload_path = path:match("^/loadpayload:(.*)")
-        -- URL decode the path (in case it contains special characters)
         payload_path = payload_path:gsub("%%(%x%x)", function(h)
             return string.char(tonumber(h, 16))
         end)
@@ -201,13 +275,30 @@ function http_server.handle_request(request)
         http_server.last_keepalive = os.time()
         return "Payload loaded: " .. payload_path
 
-    elseif path:match("^/command%?action=(.+)$") then
-        print("Received", method, "request for", path)
-        local action = path:match("^/command%?action=(.+)$")
-        menu_action(action)
-        return "Command received: " .. action
-
+    elseif path:match("^/manage:upload%?filename=(.+)$") and method == "POST" then
+        local filename = path:match("^/manage:upload%?filename=(.+)$")
+        filename = filename:gsub("%%(%x%x)", function(h)
+            return string.char(tonumber(h, 16))
+        end)
+        
+        local file_content = http_server.extract_post_data(request)
+        
+        if file_content then
+            local success, message = process_uploaded_file(filename, file_content)
+            return "OK"
+        else
+            return "Error: No file content received"
+        end
+    
+    elseif path == "/getip" then
+        local ip = get_local_ip_address()
+        if ip then
+            return ip
+        else
+            return "error"
+        end
     else
+        print("404: Received", method, "request for", path)
         return "404 Not Found"
     end
 end
@@ -232,10 +323,11 @@ function http_server.run(port)
         -- Check if client is active
         local current_time = os.time()
         if current_time - http_server.last_keepalive > 4 and payload_is_currently_loading ~= true then
-            --print("Browser seems closed (no keepalive for 4 seconds). Reopening...")
-            --http_server.openBrowser()
-            send_ps_notification("Shutting down HTTP server...")
-            http_server.should_shutdown = true
+            send_ps_notification("Reopening browser...\nUse EXIT button to close it.")
+            print("Browser seems closed (no keepalive for 4 seconds). Reopening...")
+            http_server.openBrowser()
+            --send_ps_notification("Shutting down HTTP server...")
+            --http_server.should_shutdown = true
         end
 
         local client_fd = http_server.accept_client_with_timeout(server_fd, 50)
