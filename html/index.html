@@ -12,7 +12,7 @@
             font-size: 20px;
             margin: 0;
             padding: 0;
-            background-color: #0055AA;
+            background: #000;
             color: white;
             font-family: sans-serif;
         }
@@ -35,9 +35,11 @@
             justify-content: center;
             min-height: 200px;
             overflow-y: auto;
+            background: linear-gradient(to right, #191f21, #101618);
+            border-radius: 0px 0px 20px 20px;
         }
         .button {
-            background-color: #1f83ff;
+            background-color: #4b4f50;
             border: none;
             color: white;
             padding: 18px 32px;
@@ -61,16 +63,21 @@
             transition: opacity 0.3s;
         }
         .log-container {
-            background-color: #001133;
+        /* gradient from left to right */
+            background: #000;
             color: #fff;
             text-align: left;
+            /* align to bottom */
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: flex-start;
             padding: 10px;
             height: 200px;
             overflow: hidden;
             font-family: monospace;
-            font-size: 14px;
+            font-size: 16px;
             border: 0;
-            border-top: 2px solid #0077CC;
             width: 100%;
             box-sizing: border-box;
             transition: all 0.5s ease;
@@ -85,9 +92,8 @@
         .log-header {
             display: flex;
             justify-content: space-between;
-            background-color: #002244;
+            background-color: #000000;
             padding: 5px 10px;
-            border-top: 1px solid #0077CC;
             bottom: 0;
         }
         .log-title {
@@ -144,6 +150,27 @@
             display: none;
         }
 
+        .return-message {
+            display: none;
+        }
+
+        .fullscreen-mode .return-message {
+            display: block;
+            left: 50%;
+            transform: translateX(-50%);
+            position: fixed;
+            top: 6px;
+            background-color: #00000040;
+            border-radius: 6px;
+            text-align: center;
+            font-size: 24px;
+            z-index: 1003;
+        }
+        .return-message p {
+            margin: 0;
+            padding: 0;
+        }
+
         .payloads-section {
             width: 100%;
             max-width: 1200px;
@@ -160,13 +187,14 @@
 
         .payload-path-tag {
             position: absolute;
-            top: 0;
-            left: 0;
-            background-color: #096ee9;
-            color: #c7c7c7;
+            top: 2px;
+            left: 2px;
+            background-color: #4e5f6d;
+            color: #c6c6c6;
             padding: 2px 5px;
             border-radius: 3px;
-            font-size: 0.8em;
+            font-size: 14px;
+            font-weight: bold;
             z-index: 1;
         }
 
@@ -202,7 +230,7 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: #003366;
+        background-color: #1a1a1d;
         z-index: 1000;
         overflow: auto;
         color: white;
@@ -259,13 +287,13 @@
         text-align: left;
         margin: 20px 0;
         padding: 16px 48px;
-        background-color: #001133;
+        background-color: #292b2e;
         border-radius: 5px;
     }
     
     .info-section h3 {
         margin-top: 0;
-        color: #1f83ff;
+        color: #fff;
     }
     
     .error-message {
@@ -309,7 +337,7 @@
     position: absolute;
     top: 20px;
     right: 20px;
-    background-color: #ff3333;
+    background-color: #6d2f2f;
     border: none;
     color: white;
     padding: 10px 15px;
@@ -323,7 +351,7 @@
 }
 
 .exit-button:hover {
-    background-color: #cc0000;
+    background-color: #562929;
 }
 
 
@@ -372,13 +400,12 @@
             </div>
         </div>
     </div>
-    <div class="log-header">
-        <div class="log-title">Logs</div>
-    </div>
     <button class="log-container" id="log-container" onclick="toggleFullscreen()">
         <pre id="log-content"></pre>
     </button>
-
+    <div class="return-message">
+        <p>Press <span style="background-color: #ccc; color: #000; font-weight: bold; border-radius: 16px; padding: 0px 6px; font-size: 18px;">X</span> to return...</p>
+    </div>
 </div>
 
     <script>
@@ -424,7 +451,7 @@
                                 //tagClass = 'payload-path-data';
                             } else if (path.startsWith('/mnt/usb')) {
                                 const usbNumber = path.substring(8,9); // Extract number after /mnt/usb
-                                tagText = 'usb'; //+ usbNumber;
+                                tagText = 'USB'; //+ usbNumber;
                                 tagClass = 'payload-path-usb';
                             }
                             if (tagText) {
@@ -608,7 +635,7 @@
                                 width: 200,
                                 height: 200,
                                 colorDark: "#ffffff",
-                                colorLight: "#001133",
+                                colorLight: "#292b2e",
                                 correctLevel: QRCode.CorrectLevel.H
                             });
                         } catch (e) {
