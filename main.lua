@@ -7,6 +7,7 @@ if not is_jailbroken() then
 end
 
 require("module/misc")
+
 require("module/elf_loader")
 require("module/elf_sender")
 

@@ -6,6 +6,8 @@ sceSystemServiceLaunchWebBrowser = fcall(dlsym(libSystemService.handle, "sceSyst
 local http_server = {}
 
 http_server.port = 8084
+
+
 http_server.last_keepalive = os.time()
 http_server.should_shutdown = false
 
@@ -254,7 +256,6 @@ function http_server.handle_request(request)
         return "Server shutting down..."
 
     elseif path == "/keepalive" then
-        http_server.last_keepalive = os.time()
         return "OK"
 
     elseif path == "/log" then
@@ -273,6 +274,7 @@ function http_server.handle_request(request)
         end)
         load_payload(payload_path)
         http_server.last_keepalive = os.time()
+
         return "Payload loaded: " .. payload_path
 
     elseif path:match("^/manage:upload%?filename=(.+)$") and method == "POST" then
@@ -280,6 +282,10 @@ function http_server.handle_request(request)
         filename = filename:gsub("%%(%x%x)", function(h)
             return string.char(tonumber(h, 16))
         end)
+
+        if not filename:match("%.lua$") and not filename:match("%.elf$") and not filename:match("%.bin$") then
+            return "Error: Invalid file extension. Only .lua, .elf, and .bin files can be uploaded."
+        end
         
         local file_content = http_server.extract_post_data(request)
         
@@ -289,7 +295,25 @@ function http_server.handle_request(request)
         else
             return "Error: No file content received"
         end
-    
+
+
+    elseif path:match("^/manage:delete%?filename=(.+)$") then
+        local filename = path:match("^/manage:delete%?filename=(.+)$")
+        filename = filename:gsub("%%(%x%x)", function(h)
+            return string.char(tonumber(h, 16))
+        end)
+
+        if not filename:match("%.lua$") and not filename:match("%.elf$") and not filename:match("%.bin$") then
+            return "Error: Invalid file extension. Only .lua, .elf, and .bin files can be deleted."
+        end
+        
+        local result = remove_file(filename)
+        if result then
+            return "File deleted: " .. filename
+        else
+            return "Error deleting file: " .. filename
+        end
+
     elseif path == "/getip" then
         local ip = get_local_ip_address()
         if ip then
@@ -322,12 +346,12 @@ function http_server.run(port)
 
         -- Check if client is active
         local current_time = os.time()
-        if current_time - http_server.last_keepalive > 4 and payload_is_currently_loading ~= true then
-            send_ps_notification("Reopening browser...\nUse EXIT button to close it.")
-            print("Browser seems closed (no keepalive for 4 seconds). Reopening...")
-            http_server.openBrowser()
-            --send_ps_notification("Shutting down HTTP server...")
-            --http_server.should_shutdown = true
+        if current_time - http_server.last_keepalive > 4 then
+            --send_ps_notification("Reopening browser...\nUse EXIT button to close it.")
+            --print("Browser seems closed (no keepalive for 4 seconds). Reopening...")
+            --http_server.openBrowser()
+            send_ps_notification("Shutting down Lua Menu server")
+            http_server.should_shutdown = true
         end
 
         local client_fd = http_server.accept_client_with_timeout(server_fd, 50)

@@ -1,7 +1,8 @@
 
 syscall.resolve({
     mkdir = 136,
-    stat = 188
+    stat = 188,
+    unlink = 10,
 })
 
 function ensure_directory_exists(path)
@@ -24,6 +25,11 @@ end
 
 function process_uploaded_file(filename, file_content)
     ensure_directory_exists("/data/ps5_lua_loader/")
+
+    if filename:match("/") or filename:match("%.%./") or filename:match("/%.%." ) or filename == ".." then
+        print("Error: Invalid filename. Path traversal attempt detected: " .. filename)
+        return false
+    end
 
     local file_path = "/data/ps5_lua_loader/" .. filename
     
@@ -54,3 +60,29 @@ function process_uploaded_file(filename, file_content)
     return true
 end
 
+
+function remove_file(filename)
+    local file_path = "/data/ps5_lua_loader/" .. filename
+    print("Attempting to remove file: " .. file_path)
+
+    if filename:match("/") or filename:match("%.%./") or filename:match("/%.%." ) or filename == ".." then
+        print("Error: Invalid filename. Path traversal attempt detected: " .. filename)
+        return false
+    end
+
+    local result = syscall.unlink(file_path):tonumber()
+
+    if result == 0 then
+        print("Successfully removed file: " .. file_path)
+        -- Sync the directory to ensure changes are written to disk
+        local dir_fd = syscall.open("/data/ps5_lua_loader/", 0, 0):tonumber()
+        if dir_fd >= 0 then
+            syscall.fsync(dir_fd)
+            syscall.close(dir_fd)
+        end
+        return true
+    else
+        print("Failed to remove file: " .. file_path .. " (Error: " .. result .. ")")
+        return false
+    end
+end

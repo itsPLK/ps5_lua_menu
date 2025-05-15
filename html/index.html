@@ -35,7 +35,7 @@
             justify-content: center;
             min-height: 200px;
             overflow-y: auto;
-            background: linear-gradient(to right, #191f21, #101618);
+            background-color: #1a1a1d;
             border-radius: 0px 0px 20px 20px;
         }
         .button {
@@ -63,7 +63,6 @@
             transition: opacity 0.3s;
         }
         .log-container {
-        /* gradient from left to right */
             background: #000;
             color: #fff;
             text-align: left;
@@ -209,7 +208,7 @@
         position: absolute;
         top: 20px;
         left: 20px;
-        background-color: #1f83ff;
+        background-color: #4e79ae;
         border: none;
         color: white;
         padding: 10px 15px;
@@ -220,6 +219,9 @@
         cursor: pointer;
         border-radius: 5px;
         z-index: 10;
+    }
+    .manage-button:hover {
+        background-color: #416796;
     }
 
     /* Full-screen Overlay */
@@ -261,7 +263,7 @@
     }
 
     .close-button {
-        background-color: #1f83ff;
+        background-color: #4e79ae;
         border: none;
         color: white;
         padding: 12px 30px;
@@ -275,7 +277,7 @@
     }
 
     .close-button:hover {
-        background-color: #0066cc;
+        background-color: #416796;
     }
     .qr-container {
         display: flex;
@@ -348,12 +350,26 @@
     cursor: pointer;
     border-radius: 5px;
     z-index: 1001;
+    display: none;
 }
 
 .exit-button:hover {
     background-color: #562929;
 }
 
+#busy {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1010;
+}
+
+#busy.active {
+    display: block;
+}
 
     </style>
 </head>
@@ -362,6 +378,7 @@
 <button id="exitBtn" class="exit-button">EXIT</button>
 
 <button id="managePayloadsBtn" class="manage-button">Manage Payloads</button>
+
 
 <div id="payloadOverlay" class="overlay">
     <div class="overlay-content">
@@ -407,6 +424,9 @@
         <p>Press <span style="background-color: #ccc; color: #000; font-weight: bold; border-radius: 16px; padding: 0px 6px; font-size: 18px;">X</span> to return...</p>
     </div>
 </div>
+
+
+<div id="busy"></div>
 
     <script>
         const logContainer = document.getElementById('log-container');
@@ -483,9 +503,10 @@
         function loadPayload(path, buttonElement) {
             // Disable the button
             buttonElement.disabled = true;
+            document.getElementById("busy").classList.add("active");
             
             const fileName = path.split('/').pop();
-
+            
             // Send the command to load the payload
             fetch('/loadpayload:' + encodeURIComponent(path))
                 .then(response => response.text())
@@ -496,9 +517,8 @@
                     console.error('Payload load error:', error);
                 })
                 .finally(() => {
-                    setTimeout(function() {
-                        buttonElement.disabled = false;
-                    }, 1500)
+                    buttonElement.disabled = false;
+                    document.getElementById("busy").classList.remove("active");
                 });
         }
 
