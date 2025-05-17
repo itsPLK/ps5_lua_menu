@@ -291,6 +291,9 @@ function http_server.handle_request(request)
         
         if file_content then
             local success, message = process_uploaded_file(filename, file_content)
+            if success ~= true then
+                return message or "Error: Unknown error during file processing"
+            end
             return "OK"
         else
             return "Error: No file content received"
@@ -307,12 +310,17 @@ function http_server.handle_request(request)
             return "Error: Invalid file extension. Only .lua, .elf, and .bin files can be deleted."
         end
         
-        local result = remove_file(filename)
-        if result then
+        local success, message = remove_file(filename)
+        if success then
             return "File deleted: " .. filename
         else
-            return "Error deleting file: " .. filename
+            return message or "Error: Unknown error during file deletion"
         end
+
+    elseif path == "/remoteloader" then
+        remote_loader:entry()
+        http_server.last_keepalive = os.time()
+        return "Remote loader started"
 
     elseif path == "/getip" then
         local ip = get_local_ip_address()
@@ -378,4 +386,3 @@ function http_server.openBrowser()
 end
 
 http_server.run(http_server.port)
-
