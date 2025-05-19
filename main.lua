@@ -24,6 +24,7 @@ HTML_CONTENT = [[html_include:html/index.html]]
 HTML_MANAGE_CONTENT = [[html_include:html/manage.html]]
 
 require("module/misc")
+require("module/config")
 require("module/elf_loader")
 require("module/elf_sender")
 require("module/manage")
@@ -31,5 +32,20 @@ require("module/list_payloads")
 require("module/load_payload")
 require("module/httpserver")
 require("module/open_browser")
+
+menu_config = get_config()
+menu_config.version = menu_version
+
+-- Set default config options
+if menu_config.autoload == nil then
+    menu_config.autoload = false
+end
+
+save_config(menu_config)
+
+print("Menu version:", menu_config.version)
+print("Autoload setting:", menu_config.autoload)
+
+
 openBrowser(SERVER_PORT)
 http_server.run(SERVER_PORT)

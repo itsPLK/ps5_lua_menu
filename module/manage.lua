@@ -1,22 +1,4 @@
 
-function ensure_directory_exists(path)
-    local st = memory.alloc(128)
-    local stat_result = syscall.stat(path, st):tonumber()
-    if stat_result < 0 then
-        -- Directory doesn't exist, create it
-        -- chmod 0755
-        local result = syscall.mkdir(path, 0x1ED):tonumber()
-        if result < 0 then
-            print("Failed to create directory: " .. path)
-            return false
-        else
-            print("Created directory: " .. path)
-            return true
-        end
-    end
-    return true
-end
-
 function process_uploaded_file(filename, file_content)
     ensure_directory_exists("/data/ps5_lua_loader/")
 
@@ -43,12 +25,6 @@ function process_uploaded_file(filename, file_content)
     local success, err = file_handle:write(file_content)
     file_handle:close()
 
-    local dir_fd = syscall.open("/data/ps5_lua_loader/", 0, 0):tonumber()
-    if dir_fd >= 0 then
-        syscall.fsync(dir_fd)
-        syscall.close(dir_fd)
-    end
-        
     if not success then
         return false, "Error: Failed to write file content: " .. (err or "unknown error")
     end
@@ -71,13 +47,7 @@ function remove_file(filename)
 
     if result == 0 then
         print("Successfully removed file: " .. file_path)
-        -- Sync the directory to ensure changes are written to disk
-        local dir_fd = syscall.open("/data/ps5_lua_loader/", 0, 0):tonumber()
-        if dir_fd >= 0 then
-            syscall.fsync(dir_fd)
-            syscall.close(dir_fd)
-        end
-        return true -- Success
+        return true
     else
         local err_msg = "Error: Failed to remove file: " .. file_path .. " (System Error: " .. result .. ")"
         print(err_msg)

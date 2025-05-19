@@ -151,3 +151,21 @@ function read_u16(addr)
     return bit32.bor(hi, bit32.lshift(lo, 8))
 end
 
+function ensure_directory_exists(path)
+    local st = memory.alloc(128)
+    local stat_result = syscall.stat(path, st):tonumber()
+    if stat_result < 0 then
+        -- Directory doesn't exist, create it
+        -- chmod 0755
+        local result = syscall.mkdir(path, 0x1ED):tonumber()
+        if result < 0 then
+            print("Failed to create directory: " .. path)
+            return false
+        else
+            print("Created directory: " .. path)
+            return true
+        end
+    end
+    return true
+end
+
