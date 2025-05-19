@@ -1,10 +1,4 @@
 
-syscall.resolve({
-    mkdir = 136,
-    stat = 188,
-    unlink = 10,
-})
-
 function ensure_directory_exists(path)
     local st = memory.alloc(128)
     local stat_result = syscall.stat(path, st):tonumber()

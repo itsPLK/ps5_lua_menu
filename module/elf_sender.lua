@@ -2,13 +2,6 @@
 elf_sender = {}
 elf_sender.__index = elf_sender
 
-
-syscall.resolve(
-    {
-        sendto = 133
-    }
-)
-
 function elf_sender:load_from_file(filepath)
 
     if not elf_loader_active and autoloading then
@@ -33,7 +26,7 @@ function elf_sender:load_from_file(filepath)
 end
 
 function elf_sender:sceNetSend(sockfd, buf, len, flags, addr, addrlen)
-    return syscall.sendto(sockfd, buf, len, flags, addr, addrlen):tonumber()
+    return syscall.send(sockfd, buf, len, flags, addr, addrlen):tonumber()
 end
 function elf_sender:sceNetSocket(domain, type, protocol)
     return syscall.socket(domain, type, protocol):tonumber()

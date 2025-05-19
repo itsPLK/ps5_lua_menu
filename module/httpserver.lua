@@ -1,12 +1,5 @@
 
-
-local libSystemService = find_mod_by_name("libSceSystemService.sprx")
-sceSystemServiceLaunchWebBrowser = fcall(dlsym(libSystemService.handle, "sceSystemServiceLaunchWebBrowser"))
-
 local http_server = {}
-
-http_server.port = 8084
-
 
 http_server.last_keepalive = os.time()
 http_server.should_shutdown = false
@@ -17,12 +10,7 @@ local SOL_SOCKET = 0xFFFF
 local SO_REUSEADDR = 0x00000004
 local INADDR_ANY = 0
 
-server_fd = nil
-
-syscall.resolve({
-    recv = 29,
-    send = 133,
-})
+http_server.fd = nil
 
 -- HTTP response template
 local HTTP_RESPONSE = [[HTTP/1.1 200 OK
@@ -39,10 +27,10 @@ function http_server.htons(port)
 end
 
 function http_server.shutdown()
-    if server_fd then
+    if http_server.fd then
         print("Closing server socket")
-        syscall.close(server_fd)
-        server_fd = nil
+        syscall.close(http_server.fd)
+        http_server.fd = nil
     end
 end
 
@@ -338,15 +326,13 @@ end
 
 function http_server.run(port)
     port = port or 8080
-    server_fd = http_server.create_server(port)
+    http_server.fd = http_server.create_server(port)
     
-    if not server_fd then
+    if not http_server.fd then
         print("Failed to create server")
         return
     end
     
-    http_server.openBrowser()
-
     http_server.should_shutdown = false
     
     -- Main server loop
@@ -355,14 +341,11 @@ function http_server.run(port)
         -- Check if client is active
         local current_time = os.time()
         if current_time - http_server.last_keepalive > 4 then
-            --send_ps_notification("Reopening browser...\nUse EXIT button to close it.")
-            --print("Browser seems closed (no keepalive for 4 seconds). Reopening...")
-            --http_server.openBrowser()
             send_ps_notification("Shutting down Lua Menu server")
             http_server.should_shutdown = true
         end
 
-        local client_fd = http_server.accept_client_with_timeout(server_fd, 50)
+        local client_fd = http_server.accept_client_with_timeout(http_server.fd, 50)
 
         if client_fd then
             local request = http_server.read_request(client_fd)
@@ -375,14 +358,5 @@ function http_server.run(port)
     end
 
     print("Shutting down HTTP server...")
-    syscall.close(server_fd)
+    syscall.close(http_server.fd)
 end
-
-function http_server.openBrowser()
-    http_server.last_keepalive = os.time()
-    local url = memory.alloc(256)
-    memory.write_buffer(url, "http://127.0.0.1:" .. http_server.port .. "/\0")
-    local ret = sceSystemServiceLaunchWebBrowser(url, 0):tonumber()
-end
-
-http_server.run(http_server.port)

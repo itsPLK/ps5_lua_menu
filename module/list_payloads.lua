@@ -1,27 +1,4 @@
 
-syscall.resolve({
-    stat = 188, -- sys_stat2
-    getdents = 272,
-    fsync = 95,
-})
-function sceStat(path, st)
-    return syscall.stat(path, st):tonumber()
-end
-function sceGetdents(sck, buf, len)
-    return syscall.getdents(sck, buf, len):tonumber()
-end
-function read_u8(addr)
-    local f = memory.read_buffer(addr, 1)
-    return f:byte(1)
-end
-function read_u16(addr)
-    local f = memory.read_buffer(addr, 2)
-    local lo = f:byte(2)
-    local hi = f:byte(1)
-    return bit32.bor(hi, bit32.lshift(lo, 8))
-end
-
-
 function list_payloads(only_data)
 
     print("Scanning for payloads in:")
