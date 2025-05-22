@@ -82,6 +82,20 @@
         .upload-btn:hover {
             background-color: #388e3c;
         }
+        .browse-btn {
+            background-color: #2196f3;
+            color: #ffffff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            margin-left: 10px;
+        }
+        .browse-btn:hover {
+            background-color: #1976d2;
+        }
         .file-input {
             display: none;
         }
@@ -96,6 +110,9 @@
             z-index: 1000;
             align-items: center;
             justify-content: center;
+        }
+        #uploadModal {
+            z-index: 1001;
         }
         .modal-content {
             background-color: #333333;
@@ -150,6 +167,81 @@
             margin-top: 10px;
             text-align: center;
         }
+        .browse-modal-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: calc(80vh - 100px);
+            overflow-y: auto;
+        }
+        .browse-modal-item {
+            padding: 10px;
+            border-bottom: 1px solid #555;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .browse-modal-item:last-child {
+            border-bottom: none;
+        }
+        .browse-modal-item p {
+            margin: 5px 0;
+            text-align: left;
+        }
+        .browse-modal-download {
+            background-color: #4caf50;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+        .browse-modal-download:hover {
+            background-color: #388e3c;
+        }
+        #browseModal .modal-content {
+            width: 600px;
+            max-width: 95%;
+        }
+        .browse-payload-description {
+            font-size: 12px;
+            color: #999;
+            margin: 0;
+        }
+        .browse-payload-description a {
+            color: #6a8fa7;
+            text-decoration: underline;
+        }
+        #browseLoadingSpinner {
+            margin: 20px auto;
+            display: none;
+        }
+        #browseErrorMessage {
+            color: #ef5350;
+            text-align: center;
+            margin-top: 20px;
+            display: none;
+        }
+        .browse-error-message {
+            color: #fff;
+            background-color: #bf1515;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+        }
+        .download-spinner {
+            border: 3px solid #fff;
+            border-top: 3px solid transparent;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            animation: spin 0.6s linear infinite;
+            margin-left: 5px;
+            display: none;
+        }
     </style>
 </head>
 <body>
@@ -164,6 +256,7 @@
         <div class="upload-section">
             <input type="file" id="fileInput" class="file-input" accept=".elf,.bin,.lua">
             <button id="uploadBtn" class="upload-btn">Upload File</button>
+            <button id="browseBtn" class="browse-btn">Browse Payloads</button>
             <p id="fileTypeError" class="error-message" style="display:none;">Please select a .elf, .bin, or .lua file.</p>
         </div>
     </div>
@@ -181,11 +274,24 @@
     
     <div id="uploadModal" class="modal">
         <div class="modal-content">
-            <h3 id="uploadStatus">Uploading File</h3>
+            <h3 id="uploadStatus">Adding File</h3>
             <div id="uploadSpinner" class="loading-spinner"></div>
             <p id="uploadMessage">Please wait while your file is being uploaded...</p>
             <div class="modal-buttons">
                 <button id="closeUpload" class="modal-btn cancel-btn" style="display: none;">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="browseModal" class="modal">
+        <div class="modal-content">
+            <h3>Available Payloads</h3>
+            <div id="browseLoadingSpinner" class="loading-spinner"></div>
+            <p id="browseErrorMessage" class="error-message"></p>
+            <ul id="browseModalList" class="browse-modal-list">
+            </ul>
+            <div class="modal-buttons">
+                <button id="closeBrowse" class="modal-btn cancel-btn">Close</button>
             </div>
         </div>
     </div>
@@ -205,8 +311,15 @@
             const uploadMessage = document.getElementById('uploadMessage');
             const uploadSpinner = document.getElementById('uploadSpinner');
             const fileTypeError = document.getElementById('fileTypeError');
+            const browseBtn = document.getElementById('browseBtn');
+            const browseModal = document.getElementById('browseModal');
+            const browseModalList = document.getElementById('browseModalList');
+            const closeBrowse = document.getElementById('closeBrowse');
+            const browseLoadingSpinner = document.getElementById('browseLoadingSpinner');
+            const browseErrorMessage = document.getElementById('browseErrorMessage');
 
             let currentFilePath = '';
+            const payloadsUrl = 'https://itsplk.github.io/ps5_payloads/ps5_payloads.json';
             
             fetchPayloads();
             
@@ -245,6 +358,32 @@
                 closeUpload.style.display = 'none';
             });
             
+            browseBtn.addEventListener('click', function() {
+                browseModalList.innerHTML = '';
+                browseErrorMessage.style.display = 'none';
+                browseLoadingSpinner.style.display = 'block';
+                browseModal.style.display = 'flex';
+                fetch(payloadsUrl)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(payloads => {
+                        browseLoadingSpinner.style.display = 'none';
+                        displayBrowseList(payloads);
+                    })
+                .catch(error => {
+                        browseLoadingSpinner.style.display = 'none';
+                        browseErrorMessage.textContent = `Error loading payloads: ${error.message}`;
+                        browseErrorMessage.style.display = 'block';
+                    });
+            });
+
+            closeBrowse.addEventListener('click', function() {
+                browseModal.style.display = 'none';
+            });
             function fetchPayloads() {
                 fetch('/list_payloads:only_data')
                     .then(response => {
@@ -292,6 +431,74 @@
                 });
             }
             
+            function displayBrowseList(payloads) {
+                browseModalList.innerHTML = '';
+                payloads.forEach(payload => {
+                    const li = document.createElement('li');
+                    li.className = 'browse-modal-item';
+                            let name = payload.filename;
+                            if (name.toLowerCase().endsWith('.bin') || name.toLowerCase().endsWith('.elf')) {
+                                name = name.slice(0, name.lastIndexOf('.'));
+                                name = name.replace(/_/g, ' ');
+                            }
+                    li.innerHTML = `
+                        <div>
+                            <p><strong>${name}</strong></p>
+                            <p class="browse-payload-description">${payload.description}</p>
+                            <p class="browse-payload-description">Last Update: ${payload.last_update}, <a href="${payload.source}" target="_blank">Source</a></p>
+                            <p class="browse-error-message"></p>
+                        </div>
+                        <button class="browse-modal-download" data-url="${payload.url}" data-filename="${payload.filename}">Download <span class="download-spinner"></span></button>
+                    `;
+                    browseModalList.appendChild(li);
+                });
+            }
+    
+            browseModalList.addEventListener('click', function(event) {
+                if (event.target.classList.contains('browse-modal-download')) {
+                    const button = event.target;
+                    const url = button.dataset.url;
+                    const filename = button.dataset.filename;
+                    const spinner = button.querySelector('.download-spinner');
+                    spinner.style.display = 'inline-block';
+
+                    downloadAndUpload(url, filename, button, spinner);
+                }
+            });
+
+            function downloadAndUpload(url, filename, button, spinner) {
+                        const listItem = Array.from(browseModalList.children).find(item => item.querySelector('.browse-modal-download').dataset.filename === filename);
+                        let errorDisplay;
+                        if (listItem) {
+                            errorDisplay = listItem.querySelector('.browse-error-message');
+                            errorDisplay.style.display = 'none';
+                    }
+
+                        fetch(url)
+                            .then(response => {
+                                if (!response.ok) {
+                                    throw new Error(`Failed to download file: ${response.status}`);
+                                }
+                                return response.blob();
+                    })
+                            .then(blob => {
+                                const file = new File([blob], filename);
+                                uploadFile(file);
+                            })
+                            .catch(error => {
+                                if (errorDisplay) {
+                                    errorDisplay.textContent = `Error downloading file: ${error.message}`;
+                                    errorDisplay.style.display = 'block';
+                                } else {
+                                    console.error(`Error downloading ${filename}: ${error.message}`);
+            }
+                    })
+                    .finally(() => {
+                        spinner.style.display = 'none';
+                    });
+                    }
+
+
             function showDeleteConfirmation(filePath, fileName) {
                 currentFilePath = filePath;
                 fileToDelete.textContent = fileName;
@@ -307,20 +514,19 @@
                         if (!response.ok) {
                             throw new Error('Failed to delete file');
                         }
-                        fetchPayloads();
-                    })
-                    .catch(error => {
+                    fetchPayloads();
+                })
+                .catch(error => {
                         alert(`Error deleting file: ${error.message}`);
-                    })
-                    .finally(() => {
+                })
+                .finally(() => {
                         currentFilePath = '';
                     });
             }
             
             function uploadFile(file) {
-                // Show upload modal
-                uploadStatus.textContent = 'Uploading File';
-                uploadMessage.textContent = `Uploading ${file.name}...`;
+                uploadStatus.textContent = 'Adding File';
+                uploadMessage.textContent = `Adding ${file.name}...`;
                 uploadSpinner.style.display = 'block';
                 closeUpload.style.display = 'none';
                 uploadModal.style.display = 'flex';
@@ -342,12 +548,12 @@
                     return text;
                 }))
                 .then(successText => {
-                    uploadStatus.textContent = 'Upload Successful';
-                    uploadMessage.textContent = `${file.name} has been uploaded successfully.`;
+                    uploadStatus.textContent = 'Payload added';
+                    uploadMessage.textContent = `${file.name} has been added successfully.`;
                     fetchPayloads();
                 })
                 .catch(error => {
-                    uploadStatus.textContent = 'Upload Failed';
+                    uploadStatus.textContent = 'Error adding payload';
                     uploadMessage.textContent = error.message;
                 })
                 .finally(() => {
