@@ -453,10 +453,16 @@
                             // Extract filename from path for shorter display
                             const fileName = path.split('/').pop();
                             
+                            let name = fileName;
+                            if (name.toLowerCase().endsWith('.bin') || name.toLowerCase().endsWith('.elf')) {
+                                name = name.slice(0, name.lastIndexOf('.'));
+                                name = name.replace(/_/g, ' ');
+                            }
+
                             // Create span for button text
                             const span = document.createElement('span');
                             span.className = 'button-text';
-                            span.textContent = fileName;
+                            span.textContent = name;
                             
                             button.appendChild(span);
                             
