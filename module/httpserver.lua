@@ -38,7 +38,6 @@ end
 function http_server.create_server(port)
     -- Create socket
     local sockfd = syscall.socket(AF_INET, SOCK_STREAM, 0):tonumber()
-    print("Server socket fd:", sockfd)
     assert(sockfd >= 0, "Server socket creation failed")
     
     -- Set socket options
@@ -74,7 +73,7 @@ function http_server.create_server(port)
         return nil
     end
     
-    print("HTTP server listening on port", port)
+    print("HTTP server started (socket fd: " .. sockfd .. "), listening on port " .. port)
     return sockfd
 end
 
@@ -305,10 +304,8 @@ function http_server.handle_request(request)
             return message or "Error: Unknown error during file deletion"
         end
 
-    elseif path == "/remoteloader" then
-        remote_loader:entry()
-        http_server.last_keepalive = os.time()
-        return "Remote loader started"
+    elseif path == "/version" then
+        return menu_version
 
     elseif path == "/getip" then
         local ip = get_local_ip_address()

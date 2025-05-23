@@ -88,7 +88,6 @@ end
 function get_local_ip_address()
     -- Create a UDP socket
     local sock = syscall.socket(2, 2, 0):tonumber() -- AF_INET=2, SOCK_DGRAM=2
-    print("Socket fd:", sock)
     assert(sock >= 0, "socket creation failed")
     
     -- Prepare address structure for Google's DNS (8.8.8.8:53)
@@ -130,7 +129,6 @@ function get_local_ip_address()
     syscall.close(sock)
     
     local ip_address = string.format("%d.%d.%d.%d", ip1, ip2, ip3, ip4)
-    print("Local IP address:", ip_address)
     return ip_address
 end
 

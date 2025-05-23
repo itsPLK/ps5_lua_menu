@@ -1,12 +1,6 @@
 
 function list_payloads(only_data)
 
-    print("Scanning for payloads in:")
-    print("/data/ps5_lua_loader/")
-    if not only_data then
-        print("/mnt/usb*/ps5_lua_loader/")
-    end
-
     -- Initialize empty array for results
     local matching_files = {}
     
@@ -72,6 +66,5 @@ function list_payloads(only_data)
         end
     end
     
-    print("Found " .. #matching_files .. " matching files")
     return matching_files
 end

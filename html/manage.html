@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PLK's Lua Menu (Payload Manager)</title>
+    <title>PLK's Lua Menu</title>
     <style>
         * {
             box-sizing: border-box;
@@ -246,7 +246,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>PLK's Lua Menu</h1>
+        <h1>PLK's Lua Menu <span class="menu-version"></span></h1>
         <h2>Payload Manager</h2>
         
         <ul id="fileList" class="file-list">
@@ -290,6 +290,7 @@
             <p id="browseErrorMessage" class="error-message"></p>
             <ul id="browseModalList" class="browse-modal-list">
             </ul>
+            <a href="https://github.com/itsPLK/ps5_payloads/issues" target="_blank" style="color: #6a8fa7; text-decoration: underline;">Suggest a payload to be added to the list</a>
             <div class="modal-buttons">
                 <button id="closeBrowse" class="modal-btn cancel-btn">Close</button>
             </div>
@@ -562,6 +563,25 @@
                     fileInput.value = '';
                 });
             }
+
+            const menuVersion = "";
+            function getVersion() {
+            fetch('/version')
+                .then(response => response.text())
+                .then(data => {
+                    if (data === 'error') {
+                        console.log('Error fetching menu version');
+                    } else {
+                        document.title = document.title + " v" + data;
+                        const versionElement = document.querySelector('.menu-version');
+                        versionElement.textContent = `v${data}`;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching menu version:', error);
+                });
+            }
+            getVersion();
         });
     </script>
 </body>

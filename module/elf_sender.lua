@@ -21,7 +21,7 @@ function elf_sender:load_from_file(filepath)
     self.elf_data = file_read(filepath)
     self.elf_size = #self.elf_data
 
-    print("elf size:", self.elf_size)
+    print("elf size: " .. self.elf_size .. " bytes")
     return self
 end
 
@@ -46,7 +46,6 @@ function elf_sender:send_to_localhost(port)
     end
 
     local sockfd = elf_sender:sceNetSocket(2, 1, 0) -- AF_INET=2, SOCK_STREAM=1
-    print("Socket fd:", sockfd)
     assert(sockfd >= 0, "socket creation failed")
     local enable = memory.alloc(4)
     memory.write_dword(enable, 1)
@@ -89,7 +88,6 @@ end
 
 function elf_sender:check_if_elfloader_is_running(port)
     local sockfd = elf_sender:sceNetSocket(2, 1, 0) -- AF_INET=2, SOCK_STREAM=1
-    print("Socket fd:", sockfd)
     assert(sockfd >= 0, "socket creation failed")
     local enable = memory.alloc(4)
     memory.write_dword(enable, 1)

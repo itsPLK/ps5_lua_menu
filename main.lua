@@ -33,5 +33,7 @@ require("module/load_payload")
 require("module/httpserver")
 require("module/open_browser")
 
+print("PLK's Lua Menu v" .. menu_version)
+
 openBrowser(SERVER_PORT)
 http_server.run(SERVER_PORT)

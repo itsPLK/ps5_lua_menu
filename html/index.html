@@ -115,6 +115,11 @@
         }
         #log-content {
             transition: all 0.5s ease;
+            width: 100%;
+        }
+
+        .fullscreen-mode #log-content {
+            overflow-y: scroll;
         }
 
         .log-hidden .log-container {
@@ -142,7 +147,6 @@
             right: 0;
             bottom: 0;
             z-index: 1002;
-            overflow-y: auto;
         }
         
         .fullscreen-mode .log-header {
@@ -429,6 +433,7 @@
 <div id="busy"></div>
 
     <script>
+        const menuVersion = "";
         const logContainer = document.getElementById('log-container');
         const logContent = document.getElementById('log-content');
         let isFullscreen = false;
@@ -494,11 +499,6 @@
                         });
                     } else {
                         payloadsContainer.innerHTML = '<div style="text-align: center; padding: 20px;">No payloads found</div>';
-                        overlay.style.display = "block";
-                        overlay.style.left = "0%";
-                        overlay.style.opacity = "100%";
-
-                        getIPAddress();
                     }
                 })
                 .catch(error => {
@@ -577,17 +577,16 @@
         }
         
         function scrollToBottom() {
-            logContainer.scrollTop = logContainer.scrollHeight;
+            logContent.scrollTop = logContent.scrollHeight;
             autoScrollEnabled = true;
         }
         
-        
         function isScrolledToBottom() {
-            return logContainer.scrollHeight - logContainer.clientHeight <= logContainer.scrollTop + 5;
+            return logContent.scrollHeight - logContent.clientHeight <= logContent.scrollTop + 5;
         }
         
         // Check scroll position
-        logContainer.addEventListener('scroll', function() {
+        logContent.addEventListener('scroll', function() {
             if (!isScrolledToBottom()) {
                 autoScrollEnabled = false;
             } else {
@@ -612,7 +611,6 @@
         // Run when page loads
         window.addEventListener('load', setupKeepAlive);
 
-
         let overlay = document.getElementById("payloadOverlay");
         let manageBtn = document.getElementById("managePayloadsBtn");
         let closeOverlayBtn = document.getElementById("closeOverlay");
@@ -625,7 +623,6 @@
             setTimeout(function() {
                 overlay.style.left = "0%";
                 overlay.style.opacity = "100%";
-
             }, 0);
             setTimeout(function() {
                 main.style.display = "none";
@@ -697,6 +694,22 @@
             // redirect to management page
             window.location.href = "/manage";
         }
+
+        function getVersion() {
+            fetch('/version')
+                .then(response => response.text())
+                .then(data => {
+                    if (data === 'error') {
+                        console.log('Error fetching menu version');
+                    } else {
+                        document.title = document.title + " v" + data;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching menu version:', error);
+                });
+        }
+        getVersion();
 
         document.getElementById('exitBtn').addEventListener('click', function() {
             fetch('/shutdown')
