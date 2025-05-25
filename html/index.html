@@ -16,16 +16,13 @@
             color: white;
             font-family: sans-serif;
         }
-        .header {
-            background-color: #003366;
-            padding: 20px;
-            text-align: center;
-        }
+
         #main {
             display: flex;
             flex-direction: column;
             height: 100vh;
         }
+
         .content {
             flex: 1;
             padding: 20px;
@@ -38,6 +35,7 @@
             background-color: #1a1a1d;
             border-radius: 0px 0px 20px 20px;
         }
+
         .button {
             background-color: #4b4f50;
             border: none;
@@ -54,19 +52,21 @@
             position: relative;
             min-width: 180px;
         }
+
         .button.active {
             background-color: #496485;
             cursor: not-allowed;
             opacity: 0.7;
         }
+
         .button-text {
             transition: opacity 0.3s;
         }
+
         .log-container {
             background: #000;
             color: #fff;
             text-align: left;
-            /* align to bottom */
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
@@ -84,63 +84,26 @@
             cursor: pointer;
             bottom: 0;
         }
+
         .log-entry {
             margin: 2px 0;
             word-wrap: break-word;
         }
-        .log-header {
-            display: flex;
-            justify-content: space-between;
-            background-color: #000000;
-            padding: 5px 10px;
-            bottom: 0;
-        }
-        .log-title {
-            font-weight: bold;
-            font-size: 16px;
-        }
-        .log-controls {
-            display: flex;
-            gap: 10px;
-        }
-        .log-control {
-            cursor: pointer;
-            color: #AACCFF;
-            user-select: none;
-            background-color: #002244;
-            border: 0;
-        }
-        .log-control:hover {
-            color: white;
-        }
+
         #log-content {
             transition: all 0.5s ease;
             width: 100%;
         }
 
-        .fullscreen-mode #log-content {
+        .fullscreen-log #log-content {
             overflow-y: scroll;
         }
 
-        .log-hidden .log-container {
-            display: none;
-        }
-
-        .fullscreen-mode #log-toggle {
-            display: none;
-        }
-
-        .log-hidden #fullscreen-toggle {
+        .fullscreen-log .content {
             display: none;
         }
         
-        /* Fullscreen mode styles */
-        .fullscreen-mode .header,
-        .fullscreen-mode .content {
-            display: none;
-        }
-        
-        .fullscreen-mode .log-container {
+        .fullscreen-log .log-container {
             height: 100%;
             position: fixed;
             left: 0;
@@ -148,16 +111,11 @@
             bottom: 0;
             z-index: 1002;
         }
-        
-        .fullscreen-mode .log-header {
-            display: none;
-        }
-
         .return-message {
             display: none;
         }
 
-        .fullscreen-mode .return-message {
+        .fullscreen-log .return-message {
             display: block;
             left: 50%;
             transform: translateX(-50%);
@@ -201,181 +159,176 @@
             z-index: 1;
         }
 
-        .payload-path-data {
+        .manage-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background-color: #4e79ae;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 10;
         }
 
-        .payload-path-usb {
+        .manage-button:hover {
+            background-color: #416796;
         }
 
-    /* Manage Payloads Button */
-    .manage-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        background-color: #4e79ae;
-        border: none;
-        color: white;
-        padding: 10px 15px;
-        text-align: center;
-        text-decoration: none;
-        font-size: 16px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 5px;
-        z-index: 10;
-    }
-    .manage-button:hover {
-        background-color: #416796;
-    }
+        .overlay {
+            display: none;
+            opacity: 0%;
+            position: fixed;
+            top: 0;
+            left: 100%;
+            width: 100%;
+            height: 100%;
+            background-color: #1a1a1d;
+            z-index: 1000;
+            overflow: auto;
+            color: white;
+            padding: 40px 20px;
+            box-sizing: border-box;
+            transition: opacity 0.5s ease, left 0.5s ease;
+        }
 
-    /* Full-screen Overlay */
-    .overlay {
-        display: none;
-        opacity: 0%;
-        position: fixed;
-        top: 0;
-        left: 100%;
-        width: 100%;
-        height: 100%;
-        background-color: #1a1a1d;
-        z-index: 1000;
-        overflow: auto;
-        color: white;
-        padding: 40px 20px;
-        box-sizing: border-box;
-        transition: opacity 0.5s ease, left 0.5s ease;
-    }
+        .overlay-content {
+            max-width: 1100px;
+            margin: 0 auto;
+            text-align: center;
+        }
 
-    .overlay-content {
-        max-width: 1100px;
-        margin: 0 auto;
-        text-align: center;
-    }
+        .info-section h3 {
+            margin-top: 0;
+            color: #1f83ff;
+        }
 
-    .info-section h3 {
-        margin-top: 0;
-        color: #1f83ff;
-    }
+        .qr-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
 
-    .qr-container {
-        display: flex;
-        justify-content: center;
-        margin: 20px 0;
-    }
+        .error-message {
+            color: #ff5555;
+            font-weight: bold;
+        }
 
-    .error-message {
-        color: #ff5555;
-        font-weight: bold;
-    }
+        .close-button {
+            background-color: #4e79ae;
+            border: none;
+            color: white;
+            padding: 12px 30px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 26px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
 
-    .close-button {
-        background-color: #4e79ae;
-        border: none;
-        color: white;
-        padding: 12px 30px;
-        text-align: center;
-        text-decoration: none;
-        font-size: 26px;
-        font-weight: bold;
-        cursor: pointer;
-        border-radius: 5px;
-        margin-top: 20px;
-    }
+        .close-button:hover {
+            background-color: #416796;
+        }
+        .qr-container {
+            display: flex;
+            justify-content: center;
+            margin: 20px 0;
+        }
+        
+        .info-section {
+            text-align: left;
+            margin: 20px 0;
+            padding: 16px 48px;
+            background-color: #292b2e;
+            border-radius: 5px;
+        }
+        
+        .info-section h3 {
+            margin-top: 0;
+            color: #fff;
+        }
+        
+        .error-message {
+            color: #ff5555;
+            font-weight: bold;
+        }
 
-    .close-button:hover {
-        background-color: #416796;
-    }
-    .qr-container {
-        display: flex;
-        justify-content: center;
-        margin: 20px 0;
-    }
-    
-    .info-section {
-        text-align: left;
-        margin: 20px 0;
-        padding: 16px 48px;
-        background-color: #292b2e;
-        border-radius: 5px;
-    }
-    
-    .info-section h3 {
-        margin-top: 0;
-        color: #fff;
-    }
-    
-    .error-message {
-        color: #ff5555;
-        font-weight: bold;
-    }
+        /* Two-column layout for QR and description */
+        .two-column-layout {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            margin: 20px 0;
+        }
 
-/* Two-column layout for QR and description */
-.two-column-layout {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    margin: 20px 0;
-}
+        .description-column {
+            flex: 1;
+            padding-right: 20px;
+        }
 
-.description-column {
-    flex: 1;
-    padding-right: 20px;
-}
+        .qr-column {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
 
-.qr-column {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
+        .exit-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: #6d2f2f;
+            border: none;
+            color: white;
+            padding: 10px 15px;
+            text-align: center;
+            text-decoration: none;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 5px;
+            z-index: 1001;
+            display: none;
+        }
 
-/* Make it responsive */
-@media screen and (max-width: 768px) {
-    .two-column-layout {
-        flex-direction: column;
-    }
-    
-    .description-column {
-        padding-right: 0;
-        margin-bottom: 20px;
-    }
-}
+        .exit-button:hover {
+            background-color: #562929;
+        }
 
+        #busy {
+            background-color: rgba(0, 0, 0, 0.7);
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1010;
+            text-align: center;
+        }
 
-.exit-button {
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    background-color: #6d2f2f;
-    border: none;
-    color: white;
-    padding: 10px 15px;
-    text-align: center;
-    text-decoration: none;
-    font-size: 32px;
-    font-weight: bold;
-    cursor: pointer;
-    border-radius: 5px;
-    z-index: 1001;
-    display: none;
-}
+        #busy.hidden {
+            display: none;
+        }
+        
+        .loading-spinner {
+            border: 6px solid #555;
+            border-top: 6px solid #007acc;
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            animation: spin 0.8s linear infinite;
+        }
 
-.exit-button:hover {
-    background-color: #562929;
-}
-
-#busy {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1010;
-}
-
-#busy.active {
-    display: block;
-}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
     </style>
 </head>
@@ -421,7 +374,7 @@
             </div>
         </div>
     </div>
-    <button class="log-container" id="log-container" onclick="toggleFullscreen()">
+    <button class="log-container" id="log-container" onclick="toggleFullscreenLog()">
         <pre id="log-content"></pre>
     </button>
     <div class="return-message">
@@ -430,17 +383,19 @@
 </div>
 
 
-<div id="busy"></div>
+<div id="busy">
+    <div class="loading-spinner" style="margin: auto; display: block; margin-top: calc(50vh - 133px);"></div>
+</div>
 
     <script>
         const menuVersion = "";
         const logContainer = document.getElementById('log-container');
         const logContent = document.getElementById('log-content');
-        let isFullscreen = false;
+        let isFullscreenLog = false;
         let isLogHidden = false;
         let autoScrollEnabled = true;
         let lastLogCount = 0;
-        
+
         // Fetch payloads and create buttons
         function fetchPayloads() {
             fetch('/list_payloads')
@@ -511,7 +466,7 @@
         // Function to load a payload
         function loadPayload(path, buttonElement) {
             buttonElement.classList.add("active");
-            document.getElementById("busy").classList.add("active");
+            document.getElementById("busy").classList.remove("hidden");
             
             const fileName = path.split('/').pop();
             
@@ -526,19 +481,14 @@
                 })
                 .finally(() => {
                     buttonElement.classList.remove("active");
-                    document.getElementById("busy").classList.remove("active");
+                    document.getElementById("busy").classList.add("hidden");
                 });
         }
 
-        function toggleLog() {
-            isLogHidden = !isLogHidden;
-            document.body.classList.toggle('log-hidden', isLogHidden);
-        }
-
-        function toggleFullscreen() {
-            isFullscreen = !isFullscreen;
-            document.body.classList.toggle('fullscreen-mode', isFullscreen);
-            if (!isFullscreen) {
+        function toggleFullscreenLog() {
+            isFullscreenLog = !isFullscreenLog;
+            document.body.classList.toggle('fullscreen-log', isFullscreenLog);
+            if (!isFullscreenLog) {
                 scrollToBottom();
             }
         }
@@ -556,7 +506,7 @@
                     console.error('Error fetching logs:', error);
                 })
                 .finally(() => {
-                    setTimeout(fetchLogs, 500);
+                    setTimeout(fetchLogs, 1000);
                 });
         }
         
@@ -601,15 +551,20 @@
         fetchPayloads();
 
         // Send keepalive every 2 seconds
-        function setupKeepAlive() {
+        function keepAliveLoop() {
             setInterval(function() {
                 fetch('/keepalive')
-                    .catch(error => console.error("Keepalive failed:", error));
+                .then(response => {
+                    document.getElementById("busy").classList.add("hidden");
+                })
+                .catch(error => {
+                    document.getElementById("busy").classList.remove("hidden");
+                    console.error("Keepalive failed:", error)
+                });
             }, 2000);
         }
         
-        // Run when page loads
-        window.addEventListener('load', setupKeepAlive);
+        window.addEventListener('load', keepAliveLoop);
 
         let overlay = document.getElementById("payloadOverlay");
         let manageBtn = document.getElementById("managePayloadsBtn");
@@ -728,6 +683,8 @@
                     console.error('Error sending shutdown request:', error);
                 });
         });
+
+        document.getElementById("busy").classList.add("hidden");
         
     </script>
 </body>
