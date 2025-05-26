@@ -42,19 +42,11 @@ function list_payloads(only_data)
                     local name = memory.read_buffer(entry + 0x8, 64)
                     name = name:match("([^%z]+)") -- Remove null terminator
                     
-                    -- Check if it's a valid file (not . or ..) and doesn't start with a dot
-                    if name and name ~= '.' and name ~= '..' and not name:match("^%.") then
+                    if not name:match("^%.") then
                         local full_path = dir_path .. name
-                        
-                        -- Check if the file exists
-                        local stat_result = sceStat(full_path, st)
-                        
-                        if stat_result >= 0 then
-                            -- Add file if it matches our extensions
-                            if name:match("%.lua$") or name:match("%.elf$") or name:match("%.bin$") then
-                                if name ~= "ps5_lua_menu.lua" and name ~= "elfldr.elf" then
-                                    table.insert(matching_files, full_path)
-                                end
+                        if name:match("%.lua$") or name:match("%.elf$") or name:match("%.bin$") then
+                            if name ~= "ps5_lua_menu.lua" and name ~= "elfldr.elf" then
+                                table.insert(matching_files, full_path)
                             end
                         end
                     end
