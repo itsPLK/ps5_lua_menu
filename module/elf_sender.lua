@@ -12,8 +12,8 @@ function elf_sender:load_from_file(filepath)
     if file_exists(filepath) then
         print("Loading elf from:", filepath)
     else
-        print("[-] File not found:", filepath)
-        send_ps_notification("[-] File not found: \n" .. filepath)
+        self.error = "File not found: " .. filepath
+        return self
     end
 
     local self = setmetatable({}, elf_sender)
@@ -39,6 +39,12 @@ function elf_sender:htons(port)
 end
 
 function elf_sender:send_to_localhost(port)
+
+    if self.error then
+        print("[-] Error: " .. self.error)
+        send_ps_notification("[-] Error: " .. self.error)
+        return false
+    end
 
     if not elf_sender:check_if_elfloader_is_running(9021) then
         elf_loader:main()
