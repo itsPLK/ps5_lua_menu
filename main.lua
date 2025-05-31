@@ -11,6 +11,7 @@ syscall.resolve({
     recv = 29,
     getsockname = 32,
     kill = 37,
+    fcntl = 92,
     fsync = 95,
     send = 133,
     mkdir = 136,
