@@ -2,10 +2,10 @@
 
 A web-based menu for jailbroken PlayStation 5 consoles.
 
-List and launch ELF/BIN/Lua payloads directly via the PS5's web browser.    
+List and launch payloads directly via the PS5's web browser.    
 Manage payloads using a web browser on another device on the same network.
 
-The menu looks for payloads in the `/mnt/usb*/ps5_lua_loader/` directory on connected USB drives.    
+The menu looks for payloads (.elf, .bin, .lua files) in the `/mnt/usb*/ps5_lua_loader/` directory on connected USB drives.    
 Payloads added through the manage page will be saved in `/data/ps5_lua_loader/` on the PS5's internal storage.
 
 ## 🚀 Quick Start
@@ -16,7 +16,7 @@ Payloads added through the manage page will be saved in `/data/ps5_lua_loader/` 
     *   Alternatively, use **[ps5_lua_loader](https://github.com/itsPLK/ps5_lua_loader)** to automatically start this menu.
 3.  **Access:**
     *   The script will open your PS5's web browser for listing/launching payloads.
-    *   To manage payloads (e.g., download), open `http://<PS5_IP>:8084` in a browser on another device (PC, phone) on the same network.
+    *   To manage payloads, open `http://<PS5_IP>:8084` in a browser on another device (PC, phone) on the same network.
 
 
 ## 🖼️ Screenshots
