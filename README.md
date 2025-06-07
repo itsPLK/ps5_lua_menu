@@ -10,7 +10,7 @@ Payloads added through the manage page will be saved in `/data/ps5_lua_loader/` 
 
 ## 🚀 Quick Start
 
-1.  **Download:** Get the latest `ps5_lua_menu.lua` from the **Releases Page**.
+1.  **Download:** Get the latest `ps5_lua_menu.lua` from the **[Releases Page](https://github.com/itsPLK/ps5_lua_menu/releases)**.
 2.  **Launch:**
     *   Use **[Remote Lua Loader](https://github.com/shahrilnet/remote_lua_loader)** to send and execute `ps5_lua_menu.lua` on your PS5.
     *   Alternatively, use **[ps5_lua_loader](https://github.com/itsPLK/ps5_lua_loader)** to automatically start this menu.
