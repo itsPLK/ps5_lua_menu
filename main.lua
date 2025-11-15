@@ -1,6 +1,5 @@
 
-menu_version = "0.1"
-
+menu_version = "0.2"
 if not is_jailbroken() then
     send_ps_notification("This script requires a jailbroken PS5.\nRun kernel exploit (e.g. umtx.lua) first")
     return

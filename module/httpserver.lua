@@ -281,6 +281,7 @@ function http_server.handle_request(request)
             if success ~= true then
                 return message or "Error: Unknown error during file processing"
             end
+            http_server.last_keepalive = os.time()
             return "OK"
         else
             return "Error: No file content received"
